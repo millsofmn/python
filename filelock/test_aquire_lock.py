@@ -1,28 +1,35 @@
 import filelock
 
-lock = filelock.FileLock('test.txt')
+file_name = __file__
+lock = filelock.FileLock(file_name)
 
-lock_acquired = lock.acquire_lock()
-
+lock_acquired = lock.acquire()
 if lock_acquired:
-    print "TEST: Lock Acquired Successfully"
+    print "TEST: Lock Acquired Passed"
 else:
     exit(1, "TEST: Lock Acquired Failed")
 
-additional_lock = filelock.FileLock('test.txt')
-additional_lock_acquired = additional_lock.acquire_lock()
+additional_lock = filelock.FileLock(file_name)
+additional_lock_acquired = additional_lock.acquire()
 
 if not additional_lock_acquired:
-    print "TEST: Additional Lock Not Acquired Successfully"
+    print "TEST: Additional Lock Not Acquired Passed"
 else:
     exit(1, "TEST: Additional Lock Not Acquired Failed")
 
-lock.release_lock()
-
-additional_lock_acquired = additional_lock.acquire_lock()
+additional_lock.acquire_with_prejudice()
+additional_lock_acquired = additional_lock.acquire()
 
 if additional_lock_acquired:
-    print "TEST: Additional Lock Acquired Successfully"
+    print "TEST: Additional Lock Acquired Passed"
 else:
     exit(1, "TEST: Additional Lock Acquired Failed")
+
+if not lock.valid_lock():
+    print "TEST: Lock Validation Passed"
+else:
+    exit(1, "TEST: Lock Validation Failed")
+
+additional_lock.release()
+
 
