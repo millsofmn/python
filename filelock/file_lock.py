@@ -149,7 +149,7 @@ class FileLock(object):
         :return:
         """
         self.uuid = uuid.uuid4()
-        line_out = "File was locked by '{}' at {} {}".format(socket.gethostname(), time.ctime(), self.uuid)
+        line_out = "File was locked by '{}' at {} {} {}".format(socket.gethostname(), time.ctime(), os.getpid(), self.uuid)
 
         file_out = open(self.lock_file, 'wt')
         file_out.write(line_out)

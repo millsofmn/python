@@ -1,7 +1,7 @@
-import filelock
+import file_lock
 
 file_name = __file__
-lock = filelock.FileLock(file_name)
+lock = file_lock.FileLock(file_name)
 
 lock_acquired = lock.acquire()
 if lock_acquired:
@@ -9,7 +9,7 @@ if lock_acquired:
 else:
     exit(1, "TEST: Lock Acquired Failed")
 
-additional_lock = filelock.FileLock(file_name)
+additional_lock = file_lock.FileLock(file_name)
 additional_lock_acquired = additional_lock.acquire()
 
 if not additional_lock_acquired:
