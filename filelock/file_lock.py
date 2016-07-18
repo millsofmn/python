@@ -4,6 +4,8 @@ import random
 import socket
 import uuid
 
+from file_backup import FileBackup
+
 """
     FileLock creates a lock file to indicate that a process is working
     with the resource.
@@ -18,6 +20,12 @@ import uuid
 """
 
 
+class FileLockException(Exception):
+    def __init__(self, code, msg):
+        self.code = code
+        self.msg = msg
+
+
 class FileLock(object):
     """
     FileLock input is file that will be locked and default timeout period
@@ -28,12 +36,14 @@ class FileLock(object):
         dirname = os.path.dirname(file_to_lock)
         file_name = os.path.splitext(basename)[0]
         name = '.' + file_name + '.lck'
+        self.data_file = file_to_lock
         self.lock_file = os.path.join(dirname, name)
         self.timeout = timeout
         self._acquire_with_prejudice = False
-        self.attempts = 1
+        self.attempts = 2
         self.lock_id = ''
         self.uuid = ''
+        self.backup = FileBackup(file_to_lock)
 
     def acquire_with_prejudice(self, value=True):
         """
@@ -84,6 +94,7 @@ class FileLock(object):
             # if file is not locked go ahead and lock file
             if not self.is_locked():
                 self._acquire()
+                self.backup.create_backup()
                 locked_acquired = True
                 break
 
@@ -94,7 +105,9 @@ class FileLock(object):
                 # go ahead and remove the previous lock and attempt to
                 # obtain the lock again
                 if self._acquire_with_prejudice and self.attempts <= 1:
-                    self.release()
+                    print "Acquiring Lock with Prejudice"
+                    self._recover()
+                    self.attempts = 2
 
                 # if additional attempts need to be made go ahead and od that
                 elif self._acquire_with_prejudice and self.attempts >= 1:
@@ -102,7 +115,7 @@ class FileLock(object):
 
                 # exit loop because lock couldn't be attained
                 else:
-                    break
+                    raise FileLockException(3, "Error Unable to obtain lock.")
 
             # Unable to lock file so sleep and try again
             else:
@@ -110,13 +123,25 @@ class FileLock(object):
 
         return locked_acquired
 
+    def _recover(self):
+        """
+        Recover from a hung process
+        :return:
+        """
+        os.remove(self.lock_file)
+        self._acquire()
+        self.backup.restore_backup()
+        self.release()
+
+
     def release(self):
         """
         Remove lock file
         :return:
         """
-        os.remove(self.lock_file)
         self.uuid = ''
+        self.backup.delete_backup()
+        os.remove(self.lock_file)
 
     def _sleep(self):
         time.sleep(random.random())
@@ -140,8 +165,11 @@ class FileLock(object):
             file_in.close()
 
             if self.uuid in line:
-                return True
-        return False
+                raise FileLockException(1, "File lock was overwritten by another service")
+
+            return True
+        else:
+            raise FileLockException(2, "File not locked anymore")
 
     def _acquire(self):
         """
