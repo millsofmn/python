@@ -99,7 +99,7 @@ class FileLock(object):
                 break
 
             # Unable to lock file and timeout has passed
-            elif timeout >= 0 and time.time() - start_time > timeout:
+            elif (int(timeout) >= 0) and (time.time() - start_time > int(timeout)):
 
                 # after timeout period and enough attempts has been completed
                 # go ahead and remove the previous lock and attempt to
