@@ -1,7 +1,7 @@
 import os
 
 
-class Properties(object):
+class Properties:
     def __init__(self):
         self._properties = {}
 
